@@ -1,0 +1,8 @@
+{
+  "name": "Bank Sekolah",
+  "description": "Aplikasi pendataan kegiatan Bank Sekolah (Minyak Jelantah dan Bank Sampah) untuk guru dan petugas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
