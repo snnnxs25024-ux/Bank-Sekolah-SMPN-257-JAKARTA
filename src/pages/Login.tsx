@@ -14,105 +14,158 @@ export default function Login() {
     login({
       id: 'u1',
       name: 'Admin User',
-      email: email,
+      email,
       role: 'Admin',
     });
     navigate('/');
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto relative overflow-hidden">
-      
-      {/* Top Decorative Abstract Waves (3 Layers) */}
-      <div className="absolute top-0 left-0 w-full z-0">
-        <svg viewBox="0 0 1440 320" className="w-full h-auto text-primary-200 fill-current opacity-80" preserveAspectRatio="none" style={{ height: '180px' }}>
-          <path d="M0,64L48,80C96,96,192,128,288,128C384,128,480,96,576,96C672,96,768,128,864,133.3C960,139,1056,117,1152,101.3C1248,85,1344,75,1392,69.3L1440,64L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path>
-        </svg>
-      </div>
-      <div className="absolute top-0 left-0 w-full z-0">
-        <svg viewBox="0 0 1440 320" className="w-full h-auto text-primary-400 fill-current opacity-80" preserveAspectRatio="none" style={{ height: '150px' }}>
-          <path d="M0,128L48,117.3C96,107,192,85,288,96C384,107,480,149,576,149.3C672,149,768,107,864,96C960,85,1056,107,1152,117.3C1248,128,1344,128,1392,128L1440,128L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path>
-        </svg>
-      </div>
-      <div className="absolute top-0 left-0 w-full z-0">
-        <svg viewBox="0 0 1440 320" className="w-full h-auto text-primary-600 fill-current" preserveAspectRatio="none" style={{ height: '110px' }}>
-          <path d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,165.3C960,192,1056,224,1152,213.3C1248,203,1344,149,1392,122.7L1440,96L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path>
-        </svg>
-      </div>
-
-      <div className="flex-1 flex flex-col justify-center px-8 relative z-10 pt-16">
-        
-        {/* Header Section */}
-        <div className="text-center mb-10">
-          <img 
-            src="https://i.imgur.com/YQ1YCei.png" 
-            alt="Logo Bank Sekolah" 
-            className="w-32 h-32 mx-auto mb-6 object-cover rounded-full shadow-lg border-4 border-white"
+    <div className="relative isolate min-h-[100svh] overflow-hidden bg-[#f8fafc] text-[#102a56]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-0" aria-hidden="true">
+        <svg
+          viewBox="0 0 1440 260"
+          preserveAspectRatio="none"
+          className="block h-[138px] w-full sm:h-[168px] lg:h-[190px]"
+        >
+          <path
+            fill="#f6bb35"
+            fillOpacity="0.42"
+            d="M0 0h1440v108c-162 54-315 66-462 35-176-37-298-25-442 19-171 52-350 55-536-3V0Z"
           />
-          <h1 className="text-3xl font-bold text-slate-900 leading-tight">BANK SEKOLAH</h1>
-          <h2 className="text-lg font-bold text-primary-600 mt-1">SMPN 257 JAKARTA</h2>
-          <p className="text-slate-500 text-sm mt-3">Silakan masuk ke akun Anda</p>
-        </div>
-
-        {/* Form Section (No Floating Card) */}
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Email / Username</label>
-            <input
-              type="text"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3.5 bg-slate-50 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors placeholder:text-slate-400"
-              placeholder="Masukkan username"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3.5 bg-slate-50 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors placeholder:text-slate-400"
-              placeholder="Masukkan password"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-primary-600 text-white font-bold py-4 rounded-lg hover:bg-primary-700 transition-colors mt-8 shadow-lg shadow-primary-600/30"
-          >
-            LOGIN SEKARANG
-          </button>
-        </form>
+          <path
+            fill="#28476f"
+            fillOpacity="0.88"
+            d="M0 0h1440v72c-196 70-374 79-535 29-172-53-316-44-467 5-151 49-297 53-438 12V0Z"
+          />
+          <path
+            fill="#102a56"
+            d="M0 0h1440v42c-178 65-355 72-532 21-176-50-337-43-488 5C274 115 134 113 0 78V0Z"
+          />
+        </svg>
       </div>
 
-      {/* Bottom Decorative Abstract Waves (3 Layers) & Credits */}
-      <div className="relative mt-auto">
-        <div className="absolute bottom-0 left-0 w-full z-0">
-          <svg viewBox="0 0 1440 320" className="w-full h-auto text-primary-200 fill-current opacity-60" preserveAspectRatio="none" style={{ height: '220px' }}>
-            <path d="M0,192L48,208C96,224,192,256,288,245.3C384,235,480,181,576,149.3C672,117,768,107,864,128C960,149,1056,203,1152,213.3C1248,224,1344,192,1392,176L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
-          </svg>
-        </div>
-        <div className="absolute bottom-0 left-0 w-full z-0">
-          <svg viewBox="0 0 1440 320" className="w-full h-auto text-primary-400 fill-current opacity-50" preserveAspectRatio="none" style={{ height: '170px' }}>
-             <path d="M0,256L48,229.3C96,203,192,149,288,154.7C384,160,480,224,576,218.7C672,213,768,139,864,128C960,117,1056,171,1152,197.3C1248,224,1344,224,1392,224L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
-          </svg>
-        </div>
-        <div className="absolute bottom-0 left-0 w-full z-0">
-          <svg viewBox="0 0 1440 320" className="w-full h-auto text-primary-600 fill-current opacity-30" preserveAspectRatio="none" style={{ height: '120px' }}>
-            <path d="M0,128L48,160C96,192,192,256,288,272C384,288,480,256,576,213.3C672,171,768,117,864,106.7C960,96,1056,128,1152,149.3C1248,171,1344,181,1392,186.7L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
-          </svg>
-        </div>
-        <div className="pb-8 pt-32 text-center relative z-10">
-          <p className="text-xs font-semibold text-primary-800 drop-shadow-sm">
-            Made by <span className="font-bold">Iskandar Pratama Technologies</span>
-          </p>
-        </div>
-      </div>
+      <main className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-md flex-col px-6 pb-40 pt-16 sm:px-8 sm:pb-44 sm:pt-20">
+        <div className="my-auto">
+          <header className="mb-7 text-center">
+            <img
+              src="/brand/smpn-257-logo.png"
+              alt="Logo Komite Sekolah SMPN 257 Jakarta"
+              className="mx-auto mb-5 h-auto w-44 object-contain drop-shadow-[0_10px_22px_rgba(16,42,86,0.16)] sm:w-48"
+            />
+            <h1 className="text-3xl font-bold leading-none tracking-[-0.03em] text-[#102a56]">
+              BANK SEKOLAH
+            </h1>
+            <h2 className="mt-2 text-base font-bold tracking-[0.08em] text-[#b77808]">
+              SMPN 257 JAKARTA
+            </h2>
+            <p className="mt-3 text-sm text-slate-500">Silakan masuk ke akun Anda</p>
+          </header>
 
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label htmlFor="username" className="mb-1.5 block text-sm font-semibold text-slate-700">
+                Email / Username
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="min-h-12 w-full rounded-md border border-slate-300 bg-white px-4 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#28476f] focus:ring-4 focus:ring-[#28476f]/10"
+                placeholder="Masukkan username"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="mb-1.5 block text-sm font-semibold text-slate-700">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="min-h-12 w-full rounded-md border border-slate-300 bg-white px-4 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#28476f] focus:ring-4 focus:ring-[#28476f]/10"
+                placeholder="Masukkan password"
+                required
+              />
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                className="min-h-12 w-full rounded-md bg-gradient-to-r from-[#102a56] to-[#28476f] px-5 font-bold tracking-[0.04em] text-white shadow-[0_10px_24px_rgba(16,42,86,0.22)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#f6bb35]/50 active:translate-y-px"
+              >
+                LOGIN SEKARANG
+              </button>
+            </div>
+          </form>
+        </div>
+      </main>
+
+      <footer className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-40 overflow-hidden sm:h-44">
+        <svg
+          viewBox="0 0 1440 240"
+          preserveAspectRatio="none"
+          className="absolute bottom-9 left-1/2 h-[calc(100%-2.25rem)] -translate-x-1/2"
+          style={{ width: 'max(100%, 900px)' }}
+          aria-hidden="true"
+        >
+          <path
+            fill="#f6bb35"
+            fillOpacity="0.13"
+            d="M0 154c210-42 354-35 533 4 193 42 340 35 493-3 151-38 279-35 414-4v89H0v-86Z"
+          />
+
+          <g fill="#102a56" fillOpacity="0.14">
+            <circle cx="214" cy="145" r="34" />
+            <rect x="207" y="145" width="14" height="54" rx="3" />
+            <circle cx="1226" cy="145" r="34" />
+            <rect x="1219" y="145" width="14" height="54" rx="3" />
+
+            <path d="M245 130h265l42 33H203l42-33Z" />
+            <rect x="226" y="160" width="304" height="50" />
+            <path d="M930 130h265l42 33H888l42-33Z" />
+            <rect x="910" y="160" width="304" height="50" />
+
+            <path d="M546 89h348l61 49H485l61-49Z" />
+            <rect x="518" y="132" width="408" height="84" />
+            <rect x="666" y="67" width="108" height="151" />
+            <path d="M654 67h132l-66-45-66 45Z" />
+            <rect x="716" y="22" width="7" height="47" />
+          </g>
+
+          <path fill="#f6bb35" fillOpacity="0.48" d="m723 24 51 14-51 16V24Z" />
+
+          <g fill="#f8fafc" fillOpacity="0.72">
+            <rect x="260" y="173" width="34" height="25" rx="2" />
+            <rect x="326" y="173" width="34" height="25" rx="2" />
+            <rect x="392" y="173" width="34" height="25" rx="2" />
+            <rect x="458" y="173" width="34" height="25" rx="2" />
+            <rect x="948" y="173" width="34" height="25" rx="2" />
+            <rect x="1014" y="173" width="34" height="25" rx="2" />
+            <rect x="1080" y="173" width="34" height="25" rx="2" />
+            <rect x="1146" y="173" width="34" height="25" rx="2" />
+            <rect x="558" y="151" width="45" height="35" rx="2" />
+            <rect x="620" y="151" width="45" height="35" rx="2" />
+            <rect x="775" y="151" width="45" height="35" rx="2" />
+            <rect x="837" y="151" width="45" height="35" rx="2" />
+            <path d="M690 164h60v54h-60z" />
+          </g>
+
+          <path fill="#102a56" fillOpacity="0.2" d="M0 207c235-14 465-9 692 4 259 15 502 12 748-5v34H0v-33Z" />
+        </svg>
+
+        <p className="absolute inset-x-4 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] text-center text-xs font-semibold text-[#102a56]">
+          Iskandar Pratama Technologies
+        </p>
+      </footer>
     </div>
   );
 }
