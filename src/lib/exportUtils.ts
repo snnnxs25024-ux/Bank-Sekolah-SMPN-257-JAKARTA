@@ -509,19 +509,19 @@ export async function exportToVectorPDF({
 }
 
 /**
- * 4. HIGH-RESOLUTION PNG IMAGE DOWNLOAD
+ * 4. HIGH-RESOLUTION JPEG IMAGE DOWNLOAD
  * Uses html2canvas with CORS and dimension safety
  */
-export async function exportToPNGImage(element: HTMLElement, fileName: string) {
+export async function exportToJPEGImage(element: HTMLElement, fileName: string) {
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,
-    allowTaint: true,
+    allowTaint: false,
     backgroundColor: '#ffffff',
     logging: false,
     windowWidth: element.scrollWidth,
   });
 
-  const dataUrl = canvas.toDataURL('image/png', 1.0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.96);
   triggerFileDownload(dataUrl, fileName);
 }

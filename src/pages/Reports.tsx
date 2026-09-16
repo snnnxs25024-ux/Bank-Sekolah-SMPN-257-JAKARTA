@@ -15,7 +15,7 @@ import {
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import {
-  exportToPNGImage,
+  exportToJPEGImage,
   exportToCSV,
   formatMonthName
 } from '../lib/exportUtils';
@@ -211,7 +211,7 @@ async function exportReportToPDF(element: HTMLElement, fileName: string) {
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,
-    allowTaint: true,
+    allowTaint: false,
     backgroundColor: '#ffffff',
     logging: false,
     windowWidth: element.scrollWidth,
@@ -350,15 +350,15 @@ export default function Reports() {
     }
   };
 
-  const handleDownloadPNG = async () => {
+  const handleDownloadJPEG = async () => {
     if (!reportRef.current || !headersReady) return;
-    setIsGenerating('png');
+    setIsGenerating('jpeg');
     try {
-      await exportToPNGImage(reportRef.current, `${fileBase}.png`);
-      showToast('File Gambar (PNG) berhasil diunduh!');
+      await exportToJPEGImage(reportRef.current, `${fileBase}.jpg`);
+      showToast('File Gambar JPG berhasil diunduh!');
     } catch (err) {
-      console.error('Failed to generate PNG:', err);
-      showError('Gagal membuat gambar PNG. Silakan gunakan opsi PDF atau Cetak.');
+      console.error('Failed to generate JPG:', err);
+      showError('Gagal membuat gambar JPG. Silakan gunakan opsi PDF atau Cetak.');
     } finally {
       setIsGenerating(null);
     }
@@ -477,17 +477,17 @@ export default function Reports() {
               </button>
 
               <button
-                onClick={handleDownloadPNG}
+                onClick={handleDownloadJPEG}
                 disabled={!!isGenerating || !headersReady}
                 className="bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center space-x-1.5 text-xs shadow-xs transition disabled:opacity-60"
-                title="Download gambar resolusi tinggi PNG"
+                title="Download gambar resolusi tinggi JPG"
               >
-                {isGenerating === 'png' ? (
+                {isGenerating === 'jpeg' ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <ImageIcon className="w-4 h-4" />
                 )}
-                <span>{isGenerating === 'png' ? 'Memproses...' : 'Unduh Gambar'}</span>
+                <span>{isGenerating === 'jpeg' ? 'Memproses...' : 'Unduh JPEG'}</span>
               </button>
 
               <button
@@ -514,10 +514,10 @@ export default function Reports() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto overflow-x-auto print:overflow-visible" data-report-root>
         <div
           ref={reportRef}
-          className="bg-white text-black p-8 sm:p-10 rounded-2xl shadow-md border border-slate-200 print:border-none print:shadow-none print:p-0 print:m-0 print:w-full"
+          className="bg-white text-black p-3 sm:p-10 rounded-2xl shadow-md border border-slate-200 print:border-none print:shadow-none print:p-0 print:m-0 print:w-full"
         >
           {targetClasses.map((cls, classIndex) => {
             const classStudents = classStudentsFor(cls, students);
@@ -534,7 +534,7 @@ export default function Reports() {
                   <img
                     src={headerDataUrls[cls.id]}
                     alt={`Header laporan ${classHeaderText(cls)}`}
-                    className="mb-4 block w-full h-auto"
+                    className="mb-4 block w-full max-w-full h-auto object-contain"
                     crossOrigin="anonymous"
                   />
                 ) : (
