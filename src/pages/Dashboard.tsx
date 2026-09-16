@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { Calendar, Users, Home as HomeIcon, CheckSquare, BarChart, Settings, LogOut } from 'lucide-react';
+import { Calendar, Users, Home as HomeIcon, CheckSquare, BarChart, Download, LogOut } from 'lucide-react';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -13,15 +13,15 @@ export default function Dashboard() {
 
   // Calculate stats for current period
   const periodActivities = activities.filter(a => a.period_id === activePeriod?.id);
-  const totalMijel = periodActivities.filter(a => a.mijel).length;
-  const totalBS = periodActivities.filter(a => a.bank_sampah).length;
+  const totalMijel = periodActivities.filter(a => a.mijel || (a as unknown as { deposit?: boolean }).deposit).length;
+  const totalBS = periodActivities.filter(a => a.bank_sampah || (a as unknown as { withdrawal?: boolean }).withdrawal).length;
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">BANK SEKOLAH</h1>
-          <p className="text-sm text-slate-500">Monitoring Kegiatan Siswa</p>
+          <h1 className="text-xl font-black text-slate-900 tracking-tight">BANK SAMPAH SEKOLAH</h1>
+          <p className="text-xs font-bold text-[#b77808] tracking-wider uppercase">SMPN 257 JAKARTA</p>
         </div>
         <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full">
           <LogOut className="w-5 h-5" />
@@ -72,6 +72,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 gap-3">
         <MenuCard icon={<CheckSquare className="text-blue-500" />} label="Input Kegiatan" onClick={() => navigate('/period')} />
         <MenuCard icon={<BarChart className="text-purple-500" />} label="Rekap Kegiatan" onClick={() => navigate('/recap-all')} />
+        <MenuCard icon={<Download className="text-emerald-500" />} label="Download Laporan" onClick={() => navigate('/reports')} />
         <MenuCard icon={<HomeIcon className="text-teal-500" />} label="Data Kelas" onClick={() => navigate('/master-class')} />
         <MenuCard icon={<Users className="text-pink-500" />} label="Data Siswa" onClick={() => navigate('/master-student')} />
       </div>

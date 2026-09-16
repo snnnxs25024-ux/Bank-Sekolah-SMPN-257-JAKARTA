@@ -13,13 +13,10 @@ export default function MasterClass() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    const newClass: ClassData = {
-      id: `c-${Date.now()}`,
-      class_name: className,
+    addClass({
+      name: className,
       grade,
-      teacher_name: teacher
-    };
-    addClass(newClass);
+    });
     setIsAdding(false);
     setClassName('');
     setTeacher('');
@@ -72,8 +69,12 @@ export default function MasterClass() {
         {classes.map(c => (
           <div key={c.id} className="bg-white p-4 rounded-md border border-slate-100 shadow-sm flex justify-between items-center">
             <div>
-              <div className="font-bold text-slate-800 text-lg">{c.class_name} <span className="text-xs font-normal bg-slate-100 px-2 py-0.5 rounded-full text-slate-500 ml-2">Tingkat {c.grade}</span></div>
-              <div className="text-sm text-slate-500 mt-1">Wali: {c.teacher_name}</div>
+              <div className="font-bold text-slate-800 text-lg flex items-center flex-wrap gap-2">
+                <span>{c.name}</span>
+                <span className="text-xs font-normal bg-slate-100 px-2 py-0.5 rounded-full text-slate-500">Tingkat {c.grade}</span>
+                <span className="text-xs font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100">ID: {c.id}</span>
+              </div>
+              <div className="text-xs text-slate-400 mt-1">Kelas Aktif</div>
             </div>
             <div className="flex space-x-2">
               <button className="p-2 text-blue-500 bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>

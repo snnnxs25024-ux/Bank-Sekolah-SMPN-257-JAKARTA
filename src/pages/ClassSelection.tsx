@@ -32,13 +32,13 @@ export default function ClassSelection() {
               className="w-full bg-white p-5 rounded-lg shadow-sm border border-slate-100 flex items-center justify-between hover:bg-slate-50 hover:border-primary-200 transition-colors text-left"
             >
               <div>
-                <h3 className="text-xl font-bold text-slate-800 mb-1">{c.class_name}</h3>
+                <h3 className="text-xl font-bold text-slate-800 mb-1">{c.name}</h3>
                 <div className="flex items-center space-x-2 text-sm text-slate-500 mb-2">
                   <Users className="w-4 h-4" />
                   <span>{classStudentsCount} Siswa</span>
                 </div>
                 <div className="text-xs bg-slate-100 inline-block px-2 py-1 rounded-md text-slate-600 font-medium">
-                  Wali: {c.teacher_name}
+                  Wali: {c.created_at}
                 </div>
               </div>
               <div className="w-10 h-10 bg-primary-50 rounded-full flex items-center justify-center text-primary-600">

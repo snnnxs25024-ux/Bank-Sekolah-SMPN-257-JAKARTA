@@ -9,32 +9,38 @@ export interface User {
 
 export interface ClassData {
   id: string;
-  class_name: string;
+  name: string; // updated from class_name
   grade: string;
-  teacher_name: string;
+  created_at?: string;
 }
 
 export interface Student {
   id: string;
-  student_name: string;
   nis?: string;
-  gender?: 'L' | 'P';
+  name: string; // updated from student_name
   class_id: string;
+  balance?: number;
+  created_at?: string;
 }
 
 export interface Period {
   id: string;
-  month: string; // e.g. "Januari", "Februari"
+  month: number | string;
   year: number;
+  is_active?: boolean;
+  created_at?: string;
 }
 
 export interface BankSchoolActivity {
   id: string;
   student_id: string;
-  class_id: string;
   period_id: string;
-  mijel: boolean;
-  bank_sampah: boolean;
+  mijel?: boolean;
+  bank_sampah?: boolean;
+  tabungan?: boolean;
+  infaq?: boolean;
+  is_absent?: boolean;
+  deposit?: number;
+  withdrawal?: number;
   created_at?: string;
-  updated_at?: string;
 }

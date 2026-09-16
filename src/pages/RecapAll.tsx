@@ -1,63 +1,67 @@
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { BarChart2, Download, FileText, ChevronRight } from 'lucide-react';
+import { BarChart2, Download, ChevronRight } from 'lucide-react';
 
 export default function RecapAll() {
   const navigate = useNavigate();
   const { classes, students, activities, activePeriod } = useStore();
 
-  if (!activePeriod) return <div>No active period</div>;
+  if (!activePeriod) return <div className="p-6">Tidak ada periode aktif</div>;
 
   const currentActivities = activities.filter(a => a.period_id === activePeriod.id);
   
-  let totalSiswaAll = 0;
+  const totalSiswaAll = students.length;
   let totalMijelAll = 0;
   let totalBSAll = 0;
 
   const recapData = classes.map(c => {
-    const classStudents = students.filter(s => s.class_id === c.id);
-    const classActivities = currentActivities.filter(a => a.class_id === c.id);
+    const classStudents = students.filter(s => s.class_id === c.id || s.class_id === c.name);
+    const classStudentIds = new Set(classStudents.map(s => s.id));
+    const classActivities = currentActivities.filter(a => classStudentIds.has(a.student_id));
     
-    const mijel = classActivities.filter(a => a.mijel).length;
-    const bs = classActivities.filter(a => a.bank_sampah).length;
+    const mijelCount = classActivities.filter(a => a.mijel).length;
+    const bsCount = classActivities.filter(a => a.bank_sampah).length;
     
-    totalSiswaAll += classStudents.length;
-    totalMijelAll += mijel;
-    totalBSAll += bs;
+    totalMijelAll += mijelCount;
+    totalBSAll += bsCount;
 
     return {
       classId: c.id,
-      className: c.class_name,
+      className: c.name,
       totalSiswa: classStudents.length,
-      mijel,
-      bs
+      mijelCount,
+      bsCount,
     };
   });
 
   return (
-    <div className="p-6">
+    <div className="p-6 pb-24">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Rekap Keseluruhan</h1>
-          <p className="text-xs text-slate-500 font-medium">Periode: {activePeriod.month} {activePeriod.year}</p>
+          <p className="text-xs text-slate-500 font-medium">Bulan: {activePeriod.month} • Tahun: {activePeriod.year}</p>
         </div>
-        <button onClick={() => navigate('/reports')} className="p-2 bg-primary-50 text-primary-600 rounded-full">
+        <button 
+          onClick={() => navigate('/reports')} 
+          className="p-2.5 bg-primary-50 text-primary-600 hover:bg-primary-100 rounded-full transition shadow-xs"
+          title="Download Laporan"
+        >
           <Download className="w-5 h-5" />
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-slate-800 text-white p-4 rounded-md text-center shadow-sm">
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="bg-slate-800 text-white p-4 rounded-xl text-center shadow-sm col-span-2">
           <div className="text-2xl font-bold">{totalSiswaAll}</div>
-          <div className="text-[10px] text-slate-400 uppercase tracking-wider mt-1">Total Siswa</div>
+          <div className="text-[10px] text-slate-300 uppercase tracking-wider mt-1">Total Siswa Terdaftar</div>
         </div>
-        <div className="bg-orange-500 text-white p-4 rounded-md text-center shadow-sm">
+        <div className="bg-blue-600 text-white p-4 rounded-xl text-center shadow-sm">
           <div className="text-2xl font-bold">{totalMijelAll}</div>
-          <div className="text-[10px] text-orange-200 uppercase tracking-wider mt-1">MIJEL</div>
+          <div className="text-[10px] text-blue-100 uppercase tracking-wider mt-1">Total Mijel</div>
         </div>
-        <div className="bg-green-500 text-white p-4 rounded-md text-center shadow-sm">
+        <div className="bg-emerald-600 text-white p-4 rounded-xl text-center shadow-sm">
           <div className="text-2xl font-bold">{totalBSAll}</div>
-          <div className="text-[10px] text-green-200 uppercase tracking-wider mt-1">Bank Sampah</div>
+          <div className="text-[10px] text-emerald-100 uppercase tracking-wider mt-1">Total Bank Sampah</div>
         </div>
       </div>
 
@@ -66,29 +70,28 @@ export default function RecapAll() {
       </h2>
 
       <div className="space-y-3">
-        {recapData.map((data) => (
+        {recapData.sort((a,b) => a.className.localeCompare(b.className)).map((data) => (
           <button 
             key={data.classId}
             onClick={() => navigate(`/recap-class/${data.classId}`)}
-            className="w-full bg-white p-4 rounded-md shadow-sm border border-slate-100 flex items-center justify-between hover:border-primary-300 transition-colors"
+            className="w-full bg-white p-4 rounded-xl shadow-xs border border-slate-200 flex items-center justify-between hover:border-primary-400 transition-colors"
           >
             <div className="flex-1 text-left">
-              <h3 className="text-lg font-bold text-slate-800">{data.className}</h3>
-              <div className="text-xs text-slate-500 mt-1">{data.totalSiswa} Siswa</div>
+              <h3 className="text-base font-bold text-slate-800">Kelas {data.className}</h3>
+              <div className="text-xs text-slate-500 mt-0.5">{data.totalSiswa} Siswa</div>
             </div>
             
             <div className="flex space-x-3 mr-4">
-              <div className="text-center">
-                <div className="text-xs text-slate-500 font-medium">MIJEL</div>
-                <div className="text-sm font-bold text-orange-600">{data.mijel}</div>
+              <div className="text-right">
+                <div className="text-[10px] text-slate-500 font-semibold uppercase">MIJEL</div>
+                <div className="text-sm font-bold text-blue-600">{data.mijelCount}</div>
               </div>
               <div className="w-px bg-slate-200"></div>
-              <div className="text-center">
-                <div className="text-xs text-slate-500 font-medium">BS</div>
-                <div className="text-sm font-bold text-green-600">{data.bs}</div>
+              <div className="text-right">
+                <div className="text-[10px] text-slate-500 font-semibold uppercase">BS</div>
+                <div className="text-sm font-bold text-emerald-600">{data.bsCount}</div>
               </div>
             </div>
-
             <ChevronRight className="w-5 h-5 text-slate-400" />
           </button>
         ))}
