@@ -1,16 +1,22 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { ChevronLeft, Download, Check } from 'lucide-react';
+import { ChevronLeft, Download, Check, FileSpreadsheet, FileText, CheckCircle2 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { exportToExcel, exportToVectorPDF, formatMonthName } from '../lib/exportUtils';
 
 export default function RecapClass() {
   const { classId } = useParams();
   const navigate = useNavigate();
   const { classes, students, activities, activePeriod } = useStore();
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState<string | null>(null);
 
   const currentClass = classes.find(c => c.id === classId);
 
   if (!currentClass || !activePeriod) return <div className="p-4">Data tidak ditemukan</div>;
+
+  const monthName = formatMonthName(activePeriod.month);
 
   const classStudents = students
     .filter(s => s.class_id === classId || (currentClass && s.class_id === currentClass.name))
@@ -22,8 +28,56 @@ export default function RecapClass() {
   const totalMijel = classActivities.filter(a => a.mijel).length;
   const totalBS = classActivities.filter(a => a.bank_sampah).length;
 
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  const handleQuickExcel = () => {
+    setIsExporting('excel');
+    try {
+      exportToExcel({
+        classes,
+        students,
+        activities,
+        period: activePeriod,
+        selectedClassId: currentClass.id,
+      });
+      showToast(`Excel Kelas ${currentClass.name} berhasil diunduh!`);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
+  const handleQuickPDF = async () => {
+    setIsExporting('pdf');
+    try {
+      await exportToVectorPDF({
+        classes,
+        students,
+        activities,
+        period: activePeriod,
+        selectedClassId: currentClass.id,
+      });
+      showToast(`PDF Kelas ${currentClass.name} berhasil diunduh!`);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-slate-50 pb-20">
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-2 text-xs font-semibold">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       <div className="bg-white px-4 py-4 border-b border-slate-100 shadow-sm sticky top-0 z-10">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
@@ -32,17 +86,36 @@ export default function RecapClass() {
             </button>
             <div>
               <h1 className="text-lg font-bold text-slate-900 leading-tight">Rekap Kelas {currentClass.name}</h1>
-              <p className="text-xs text-slate-500 font-medium">Periode: Bulan {activePeriod.month} / {activePeriod.year}</p>
+              <p className="text-xs text-slate-500 font-medium">Periode: Bulan {monthName} {activePeriod.year}</p>
             </div>
           </div>
 
-          <button
-            onClick={() => navigate(`/reports?classId=${currentClass.id}`)}
-            className="px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm transition"
-          >
-            <Download className="w-4 h-4" />
-            <span>Download Laporan</span>
-          </button>
+          <div className="flex items-center space-x-1.5">
+            <button
+              onClick={handleQuickExcel}
+              disabled={!!isExporting}
+              className="p-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition shadow-xs"
+              title="Download Excel Kelas Ini"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleQuickPDF}
+              disabled={!!isExporting}
+              className="p-2 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded-xl transition shadow-xs"
+              title="Download PDF Kelas Ini"
+            >
+              <FileText className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => navigate(`/reports?classId=${currentClass.id}`)}
+              className="px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm transition"
+              title="Buka Halaman Download Lengkap"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Laporan Lengkap</span>
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2">

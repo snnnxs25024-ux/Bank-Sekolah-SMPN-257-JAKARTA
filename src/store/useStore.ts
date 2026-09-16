@@ -19,8 +19,12 @@ interface AppState {
   fetchActivitiesByPeriod: (periodId: string) => Promise<void>;
   saveActivity: (activities: Partial<BankSchoolActivity>[]) => Promise<void>;
   addClass: (newClass: Omit<ClassData, 'id' | 'created_at'>) => Promise<ClassData | null>;
+  updateClass: (id: string, updated: Partial<ClassData>) => Promise<void>;
+  deleteClass: (id: string) => Promise<void>;
   addStudent: (newStudent: Omit<Student, 'id' | 'created_at'>) => Promise<void>;
   addStudents: (newStudents: Omit<Student, 'id' | 'created_at'>[]) => Promise<void>;
+  updateStudent: (id: string, updated: Partial<Student>) => Promise<void>;
+  deleteStudent: (id: string) => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -62,7 +66,6 @@ export const useStore = create<AppState>((set, get) => ({
       if (classesData.length === 0 && localClasses.length > 0) {
         classesData = localClasses;
       } else if (classesData.length > 0) {
-        // Merge any locally added classes not yet in Supabase
         const existingClassIds = new Set(classesData.map(c => c.id));
         const localOnlyClasses = localClasses.filter(c => !existingClassIds.has(c.id));
         classesData = [...classesData, ...localOnlyClasses];
@@ -72,14 +75,31 @@ export const useStore = create<AppState>((set, get) => ({
       if (studentsData.length === 0 && localStudents.length > 0) {
         studentsData = localStudents;
       } else if (studentsData.length > 0) {
-        // Merge any locally added students not yet in Supabase
         const existingStudentIds = new Set(studentsData.map(s => s.id));
         const localOnlyStudents = localStudents.filter(s => !existingStudentIds.has(s.id));
         studentsData = [...studentsData, ...localOnlyStudents];
         localStorage.setItem('local_students', JSON.stringify(studentsData));
       }
 
-      if (periodsData.length === 0 && localPeriods.length > 0) {
+      // If no periods exist in database or local storage, create a default active period
+      if (periodsData.length === 0 && localPeriods.length === 0) {
+        const defaultPeriod = {
+          month: 9,
+          year: 2026,
+          is_active: true
+        };
+        try {
+          const { data: createdP } = await supabase.from('periods').insert([defaultPeriod]).select().single();
+          if (createdP) {
+            periodsData = [createdP];
+          } else {
+            periodsData = [{ id: `p-${Date.now()}`, month: 9, year: 2026, is_active: true }];
+          }
+        } catch {
+          periodsData = [{ id: `p-${Date.now()}`, month: 9, year: 2026, is_active: true }];
+        }
+        localStorage.setItem('local_periods', JSON.stringify(periodsData));
+      } else if (periodsData.length === 0 && localPeriods.length > 0) {
         periodsData = localPeriods;
       } else if (periodsData.length > 0) {
         localStorage.setItem('local_periods', JSON.stringify(periodsData));
@@ -153,7 +173,27 @@ export const useStore = create<AppState>((set, get) => ({
 
     // 2. Persist to Supabase in the background
     try {
-      await supabase.from('activities').upsert(newActivities, { onConflict: 'id' }).select();
+      const isUUID = (str?: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str || '');
+      
+      const payload = newActivities.map(act => {
+        const item: Record<string, any> = {
+          student_id: act.student_id,
+          period_id: act.period_id,
+          mijel: !!act.mijel,
+          bank_sampah: !!act.bank_sampah,
+          tabungan: !!act.tabungan,
+          infaq: !!act.infaq,
+          is_absent: !!act.is_absent,
+          deposit: act.deposit || 0,
+          withdrawal: act.withdrawal || 0
+        };
+        if (act.id && isUUID(act.id)) {
+          item.id = act.id;
+        }
+        return item;
+      });
+
+      await supabase.from('activities').upsert(payload, { onConflict: 'student_id,period_id' }).select();
     } catch (err) {
       console.warn('Activity saved locally, Supabase sync skipped:', err);
     }
@@ -196,10 +236,39 @@ export const useStore = create<AppState>((set, get) => ({
     return tempClass;
   },
 
+  updateClass: async (id, updated) => {
+    set((state) => {
+      const newClasses = state.classes.map(c => c.id === id ? { ...c, ...updated } : c);
+      localStorage.setItem('local_classes', JSON.stringify(newClasses));
+      return { classes: newClasses };
+    });
+
+    try {
+      await supabase.from('classes').update(updated).eq('id', id);
+    } catch (err) {
+      console.warn('Class updated locally, Supabase update skipped:', err);
+    }
+  },
+
+  deleteClass: async (id) => {
+    set((state) => {
+      const newClasses = state.classes.filter(c => c.id !== id);
+      localStorage.setItem('local_classes', JSON.stringify(newClasses));
+      return { classes: newClasses };
+    });
+
+    try {
+      await supabase.from('classes').delete().eq('id', id);
+    } catch (err) {
+      console.warn('Class deleted locally, Supabase delete skipped:', err);
+    }
+  },
+
   addStudent: async (newStudent) => {
+    const safeNis = newStudent.nis || `S-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
     const tempStudent: Student = {
       id: `s-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      nis: newStudent.nis,
+      nis: safeNis,
       name: newStudent.name,
       class_id: newStudent.class_id,
       balance: newStudent.balance || 0,
@@ -215,12 +284,19 @@ export const useStore = create<AppState>((set, get) => ({
 
     // Try Supabase insert
     try {
-      const { data, error } = await supabase.from('students').insert([{
-        nis: newStudent.nis,
+      const isUUID = (str?: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str || '');
+      const classIdToUse = isUUID(newStudent.class_id) ? newStudent.class_id : undefined;
+
+      const payload: Record<string, any> = {
+        nis: safeNis,
         name: newStudent.name,
-        class_id: newStudent.class_id,
         balance: newStudent.balance || 0
-      }]).select().single();
+      };
+      if (classIdToUse) {
+        payload.class_id = classIdToUse;
+      }
+
+      const { data, error } = await supabase.from('students').insert([payload]).select().single();
 
       if (!error && data) {
         set((state) => {
@@ -235,9 +311,11 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   addStudents: async (newStudents) => {
+    const isUUID = (str?: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str || '');
+
     const createdList: Student[] = newStudents.map((s, idx) => ({
       id: `s-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 4)}`,
-      nis: s.nis,
+      nis: s.nis || `S-${Date.now().toString().slice(-6)}-${idx}`,
       name: s.name,
       class_id: s.class_id,
       balance: s.balance || 0,
@@ -253,12 +331,17 @@ export const useStore = create<AppState>((set, get) => ({
 
     // Try Supabase bulk insert
     try {
-      const payload = newStudents.map(s => ({
-        nis: s.nis,
-        name: s.name,
-        class_id: s.class_id,
-        balance: s.balance || 0
-      }));
+      const payload = newStudents.map((s, idx) => {
+        const item: Record<string, any> = {
+          nis: s.nis || `S-${Date.now().toString().slice(-6)}-${idx}`,
+          name: s.name,
+          balance: s.balance || 0
+        };
+        if (isUUID(s.class_id)) {
+          item.class_id = s.class_id;
+        }
+        return item;
+      });
 
       const { data, error } = await supabase.from('students').insert(payload).select();
       if (!error && data && data.length > 0) {
@@ -273,5 +356,34 @@ export const useStore = create<AppState>((set, get) => ({
     } catch (err) {
       console.warn('Students saved locally, Supabase bulk insert skipped:', err);
     }
+  },
+
+  updateStudent: async (id, updated) => {
+    set((state) => {
+      const newStudents = state.students.map(s => s.id === id ? { ...s, ...updated } : s);
+      localStorage.setItem('local_students', JSON.stringify(newStudents));
+      return { students: newStudents };
+    });
+
+    try {
+      await supabase.from('students').update(updated).eq('id', id);
+    } catch (err) {
+      console.warn('Student updated locally, Supabase update skipped:', err);
+    }
+  },
+
+  deleteStudent: async (id) => {
+    set((state) => {
+      const newStudents = state.students.filter(s => s.id !== id);
+      localStorage.setItem('local_students', JSON.stringify(newStudents));
+      return { students: newStudents };
+    });
+
+    try {
+      await supabase.from('students').delete().eq('id', id);
+    } catch (err) {
+      console.warn('Student deleted locally, Supabase delete skipped:', err);
+    }
   }
 }));
+

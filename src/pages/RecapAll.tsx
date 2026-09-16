@@ -1,13 +1,18 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { BarChart2, Download, ChevronRight } from 'lucide-react';
+import { BarChart2, Download, ChevronRight, FileSpreadsheet, FileText, CheckCircle2 } from 'lucide-react';
+import { exportToExcel, exportToVectorPDF, formatMonthName } from '../lib/exportUtils';
 
 export default function RecapAll() {
   const navigate = useNavigate();
   const { classes, students, activities, activePeriod } = useStore();
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState<string | null>(null);
 
   if (!activePeriod) return <div className="p-6">Tidak ada periode aktif</div>;
 
+  const monthName = formatMonthName(activePeriod.month);
   const currentActivities = activities.filter(a => a.period_id === activePeriod.id);
   
   const totalSiswaAll = students.length;
@@ -34,20 +39,86 @@ export default function RecapAll() {
     };
   });
 
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  const handleQuickExcel = () => {
+    setIsExporting('excel');
+    try {
+      exportToExcel({
+        classes,
+        students,
+        activities,
+        period: activePeriod,
+        selectedClassId: 'all',
+      });
+      showToast('Excel rekap semua kelas berhasil diunduh!');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
+  const handleQuickPDF = async () => {
+    setIsExporting('pdf');
+    try {
+      await exportToVectorPDF({
+        classes,
+        students,
+        activities,
+        period: activePeriod,
+        selectedClassId: 'all',
+      });
+      showToast('PDF rekap semua kelas berhasil diunduh!');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
   return (
     <div className="p-6 pb-24">
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-2 text-xs font-semibold">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Rekap Keseluruhan</h1>
-          <p className="text-xs text-slate-500 font-medium">Bulan: {activePeriod.month} • Tahun: {activePeriod.year}</p>
+          <h1 className="text-xl font-black text-slate-900">Rekap Keseluruhan</h1>
+          <p className="text-xs text-slate-500 font-medium">Bulan: {monthName} • Tahun: {activePeriod.year}</p>
         </div>
-        <button 
-          onClick={() => navigate('/reports')} 
-          className="p-2.5 bg-primary-50 text-primary-600 hover:bg-primary-100 rounded-full transition shadow-xs"
-          title="Download Laporan"
-        >
-          <Download className="w-5 h-5" />
-        </button>
+        <div className="flex items-center space-x-2">
+          <button 
+            onClick={handleQuickExcel}
+            disabled={!!isExporting}
+            className="p-2.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl transition shadow-xs border border-emerald-200 flex items-center space-x-1"
+            title="Download Excel Semua Kelas"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={handleQuickPDF}
+            disabled={!!isExporting}
+            className="p-2.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-xl transition shadow-xs border border-red-200 flex items-center space-x-1"
+            title="Download PDF Semua Kelas"
+          >
+            <FileText className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={() => navigate('/reports')} 
+            className="p-2.5 bg-primary-50 text-primary-600 hover:bg-primary-100 rounded-xl transition shadow-xs border border-primary-200"
+            title="Buka Halaman Download Lengkap"
+          >
+            <Download className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-6">
@@ -57,7 +128,7 @@ export default function RecapAll() {
         </div>
         <div className="bg-blue-600 text-white p-4 rounded-xl text-center shadow-sm">
           <div className="text-2xl font-bold">{totalMijelAll}</div>
-          <div className="text-[10px] text-blue-100 uppercase tracking-wider mt-1">Total Mijel</div>
+          <div className="text-[10px] text-blue-100 uppercase tracking-wider mt-1">Total Partisipasi Mijel</div>
         </div>
         <div className="bg-emerald-600 text-white p-4 rounded-xl text-center shadow-sm">
           <div className="text-2xl font-bold">{totalBSAll}</div>
@@ -99,3 +170,4 @@ export default function RecapAll() {
     </div>
   );
 }
+

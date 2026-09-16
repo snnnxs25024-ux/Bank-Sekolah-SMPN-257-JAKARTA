@@ -1,22 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { ChevronLeft, FileText, Image as ImageIcon, Printer, Check, Minus } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-
-const INDONESIAN_MONTHS = [
-  '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-];
-
-function formatMonth(month: number | string): string {
-  const m = Number(month);
-  if (!isNaN(m) && m >= 1 && m <= 12) {
-    return INDONESIAN_MONTHS[m];
-  }
-  return String(month);
-}
+import { 
+  ChevronLeft, 
+  FileText, 
+  Image as ImageIcon, 
+  Printer, 
+  FileSpreadsheet, 
+  FileCode, 
+  CheckCircle2, 
+  Loader2, 
+  Download,
+  AlertCircle
+} from 'lucide-react';
+import { 
+  exportToExcel, 
+  exportToVectorPDF, 
+  exportToPNGImage, 
+  exportToCSV, 
+  formatMonthName 
+} from '../lib/exportUtils';
 
 export default function Reports() {
   const navigate = useNavigate();
@@ -25,15 +28,31 @@ export default function Reports() {
   
   const initialClassId = searchParams.get('classId') || (classes[0]?.id || 'all');
   const [selectedClassId, setSelectedClassId] = useState<string>(initialClassId);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGenerating, setIsGenerating] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const cid = searchParams.get('classId');
-    if (cid && classes.some(c => c.id === cid)) {
+    if (cid && (cid === 'all' || classes.some(c => c.id === cid))) {
       setSelectedClassId(cid);
     }
   }, [searchParams, classes]);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 2800);
+  };
+
+  const showError = (msg: string) => {
+    setErrorMessage(msg);
+    setTimeout(() => {
+      setErrorMessage(null);
+    }, 4000);
+  };
 
   if (!activePeriod) {
     return (
@@ -41,7 +60,7 @@ export default function Reports() {
         <p className="text-sm">Tidak ada periode aktif yang dipilih.</p>
         <button 
           onClick={() => navigate('/period')}
-          className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg text-xs font-semibold"
+          className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg text-xs font-semibold shadow-sm"
         >
           Pilih Periode
         </button>
@@ -49,87 +68,110 @@ export default function Reports() {
     );
   }
 
-  const monthName = formatMonth(activePeriod.month);
+  const monthName = formatMonthName(activePeriod.month);
   const isAll = selectedClassId === 'all';
   const targetClasses = isAll ? classes : classes.filter(c => c.id === selectedClassId);
 
-  // Download high-resolution PNG image
+  // 1. Download Excel (.xlsx)
+  const handleDownloadExcel = async () => {
+    setIsGenerating('excel');
+    try {
+      exportToExcel({
+        classes,
+        students,
+        activities,
+        period: activePeriod,
+        selectedClassId,
+      });
+      showToast('File Excel (.xlsx) berhasil diunduh!');
+    } catch (err) {
+      console.error('Failed to export Excel:', err);
+      showError('Gagal mengunduh Excel. Silakan coba kembali.');
+    } finally {
+      setIsGenerating(null);
+    }
+  };
+
+  // 2. Download Official PDF
+  const handleDownloadPDF = async () => {
+    setIsGenerating('pdf');
+    try {
+      await exportToVectorPDF({
+        classes,
+        students,
+        activities,
+        period: activePeriod,
+        selectedClassId,
+      });
+      showToast('File PDF resmi berhasil diunduh!');
+    } catch (err) {
+      console.error('Failed to export PDF:', err);
+      showError('Gagal mengunduh PDF. Silakan gunakan opsi Cetak/Print.');
+    } finally {
+      setIsGenerating(null);
+    }
+  };
+
+  // 3. Download PNG Image
   const handleDownloadPNG = async () => {
     if (!reportRef.current) return;
-    setIsGenerating(true);
+    setIsGenerating('png');
     try {
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-      });
-      const link = document.createElement('a');
       const classNameClean = isAll ? 'Semua_Kelas' : (classes.find(c => c.id === selectedClassId)?.name || 'Kelas').replace(/\s+/g, '_');
-      link.download = `Laporan_Bank_Sampah_${classNameClean}_${monthName}_${activePeriod.year}.png`;
-      link.href = canvas.toDataURL('image/png', 1.0);
-      link.click();
+      const fileName = `Laporan_Bank_Sampah_${classNameClean}_${monthName}_${activePeriod.year}.png`;
+      await exportToPNGImage(reportRef.current, fileName);
+      showToast('File Gambar (PNG) berhasil diunduh!');
     } catch (err) {
       console.error('Failed to generate PNG:', err);
-      alert('Gagal membuat file gambar. Silakan gunakan opsi Cetak/PDF.');
+      showError('Gagal membuat gambar PNG. Silakan gunakan opsi PDF atau Cetak.');
     } finally {
-      setIsGenerating(false);
+      setIsGenerating(null);
     }
   };
 
-  // Download PDF file
-  const handleDownloadPDF = async () => {
-    if (!reportRef.current) return;
-    setIsGenerating(true);
+  // 4. Download CSV
+  const handleDownloadCSV = async () => {
+    setIsGenerating('csv');
     try {
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
+      exportToCSV({
+        classes,
+        students,
+        activities,
+        period: activePeriod,
+        selectedClassId,
       });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight;
-      }
-
-      const classNameClean = isAll ? 'Semua_Kelas' : (classes.find(c => c.id === selectedClassId)?.name || 'Kelas').replace(/\s+/g, '_');
-      pdf.save(`Laporan_Bank_Sampah_${classNameClean}_${monthName}_${activePeriod.year}.pdf`);
+      showToast('File CSV berhasil diunduh!');
     } catch (err) {
-      console.error('Failed to generate PDF:', err);
-      window.print();
+      console.error('Failed to export CSV:', err);
+      showError('Gagal mengunduh CSV.');
     } finally {
-      setIsGenerating(false);
+      setIsGenerating(null);
     }
   };
 
-  // Direct print via browser
+  // 5. Direct print via browser
   const handlePrint = () => {
     window.print();
   };
 
   return (
     <div className="min-h-screen bg-slate-100 p-4 sm:p-6 pb-24">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-2.5 text-xs font-semibold animate-in fade-in slide-in-from-top-3 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Error Alert */}
+      {errorMessage && (
+        <div className="fixed top-5 right-5 z-50 bg-red-600 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-2.5 text-xs font-semibold animate-in fade-in slide-in-from-top-3 duration-200">
+          <AlertCircle className="w-4 h-4 text-white flex-shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
       {/* Navigation & Control Panel (Screen only, hidden on print) */}
       <div className="max-w-3xl mx-auto print:hidden">
         <div className="flex items-center space-x-3 mb-5">
@@ -141,7 +183,7 @@ export default function Reports() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">
+            <h1 className="text-lg sm:text-xl font-black text-slate-900 leading-tight">
               Download & Cetak Laporan
             </h1>
             <p className="text-xs text-slate-500 font-medium">
@@ -154,7 +196,7 @@ export default function Reports() {
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm mb-6">
           <div className="mb-4">
             <label htmlFor="select-class" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-              Pilih Kelas
+              Pilih Target Laporan
             </label>
             <select
               id="select-class"
@@ -162,7 +204,7 @@ export default function Reports() {
               onChange={(e) => setSelectedClassId(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition"
             >
-              {classes.length > 1 && <option value="all">Semua Kelas (Cetak Sekaligus)</option>}
+              {classes.length > 0 && <option value="all">Semua Kelas (Cetak & Unduh Sekaligus)</option>}
               {classes.map(c => (
                 <option key={c.id} value={c.id}>
                   Kelas {c.name} (Tingkat {c.grade})
@@ -171,32 +213,79 @@ export default function Reports() {
             </select>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <button
-              onClick={handleDownloadPDF}
-              disabled={isGenerating}
-              className="bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center space-x-1.5 text-xs sm:text-sm shadow-sm transition disabled:opacity-60"
-            >
-              <FileText className="w-4 h-4" />
-              <span>{isGenerating ? 'Memproses...' : 'Unduh PDF'}</span>
-            </button>
+          <div className="space-y-2">
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              Opsi Download & Cetak:
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {/* 1. Unduh Excel */}
+              <button
+                onClick={handleDownloadExcel}
+                disabled={!!isGenerating}
+                className="bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center space-x-1.5 text-xs shadow-xs transition disabled:opacity-60"
+                title="Download spreadsheet Excel .xlsx"
+              >
+                {isGenerating === 'excel' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="w-4 h-4" />
+                )}
+                <span>{isGenerating === 'excel' ? 'Memproses...' : 'Unduh Excel'}</span>
+              </button>
 
-            <button
-              onClick={handleDownloadPNG}
-              disabled={isGenerating}
-              className="bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center space-x-1.5 text-xs sm:text-sm shadow-sm transition disabled:opacity-60"
-            >
-              <ImageIcon className="w-4 h-4" />
-              <span>{isGenerating ? 'Memproses...' : 'Unduh Gambar'}</span>
-            </button>
+              {/* 2. Unduh PDF */}
+              <button
+                onClick={handleDownloadPDF}
+                disabled={!!isGenerating}
+                className="bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center space-x-1.5 text-xs shadow-xs transition disabled:opacity-60"
+                title="Download dokumen PDF resmi"
+              >
+                {isGenerating === 'pdf' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileText className="w-4 h-4" />
+                )}
+                <span>{isGenerating === 'pdf' ? 'Memproses...' : 'Unduh PDF'}</span>
+              </button>
 
-            <button
-              onClick={handlePrint}
-              className="bg-slate-800 hover:bg-slate-900 active:scale-[0.98] text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center space-x-1.5 text-xs sm:text-sm shadow-sm transition"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Cetak / Print</span>
-            </button>
+              {/* 3. Unduh Gambar PNG */}
+              <button
+                onClick={handleDownloadPNG}
+                disabled={!!isGenerating}
+                className="bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center space-x-1.5 text-xs shadow-xs transition disabled:opacity-60"
+                title="Download gambar resolusi tinggi PNG"
+              >
+                {isGenerating === 'png' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ImageIcon className="w-4 h-4" />
+                )}
+                <span>{isGenerating === 'png' ? 'Memproses...' : 'Unduh Gambar'}</span>
+              </button>
+
+              {/* 4. Cetak Langsung */}
+              <button
+                onClick={handlePrint}
+                className="bg-slate-800 hover:bg-slate-900 active:scale-[0.98] text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center space-x-1.5 text-xs shadow-xs transition"
+                title="Cetak langsung menggunakan printer / print to PDF"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Cetak / Print</span>
+              </button>
+            </div>
+
+            {/* Quick CSV export option */}
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={handleDownloadCSV}
+                disabled={!!isGenerating}
+                className="text-[11px] text-slate-500 hover:text-slate-800 font-semibold flex items-center space-x-1 px-2 py-1 rounded-lg hover:bg-slate-100 transition"
+              >
+                <FileCode className="w-3.5 h-3.5" />
+                <span>Format CSV alternatif</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -225,6 +314,7 @@ export default function Reports() {
                     src="/brand/smpn-257-logo.png" 
                     alt="Logo SMPN 257 Jakarta" 
                     className="w-16 h-16 sm:w-20 sm:h-20 object-contain flex-shrink-0"
+                    crossOrigin="anonymous"
                   />
                   {/* Teks Samping Logo */}
                   <div className="flex-1">
@@ -235,7 +325,7 @@ export default function Reports() {
                       SMPN 257 JAKARTA
                     </h2>
                     <p className="text-xs sm:text-sm font-bold text-slate-800 mt-1">
-                      Kelas: {cls.name}
+                      Kelas: {cls.name} (Tingkat {cls.grade})
                     </p>
                   </div>
                 </div>
